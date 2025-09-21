@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Card Default Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-header">Credit Card Default Prediction</h1>
+
+        {% if not model_loaded %}
+        <div class="error-box">
+            <strong>Warning:</strong> Model not loaded. Predictions will not work. Please check if the model file exists in the Model/ folder.
+        </div>
+        {% endif %}
+
+        <div class="info-box">
+            <p>Fill in the client information below to predict the likelihood of credit card default.</p>
+        </div>
+
+        <form id="prediction-form">
+            <div class="section-header">Personal Information</div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="limit_bal">Credit Limit ($NT)</label>
+                    <input type="number" id="limit_bal" name="limit_bal" min="0" max="1000000" step="1000" required
+                           oninput="validateRange(this, 0, 1000000)">
+                    <small>Range: 0 - 1,000,000</small>
+                    <div class="error-message" id="limit_bal_error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" name="age" min="18" max="100" required
+                           oninput="validateRange(this, 18, 100)">
+                    <small>Range: 18 - 100</small>
+                    <div class="error-message" id="age_error"></div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Sex</label>
+                    <div class="radio-group">
+                        <input type="radio" id="sex_male" name="sex" value="1" checked>
+                        <label for="sex_male">Male</label>
+
+                        <input type="radio" id="sex_female" name="sex" value="2">
+                        <label for="sex_female">Female</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Education</label>
+                    <div class="radio-group">
+                        <input type="radio" id="edu_graduate" name="education" value="1" checked>
+                        <label for="edu_graduate">Graduate School</label>
+
+                        <input type="radio" id="edu_university" name="education" value="2">
+                        <label for="edu_university">University</label>
+
+                        <input type="radio" id="edu_highschool" name="education" value="3">
+                        <label for="edu_highschool">High School</label>
+
+                        <input type="radio" id="edu_other" name="education" value="4">
+                        <label for="edu_other">Other</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Marital Status</label>
+                    <div class="radio-group">
+                        <input type="radio" id="mar_married" name="marriage" value="1" checked>
+                        <label for="mar_married">Married</label>
+
+                        <input type="radio" id="mar_single" name="marriage" value="2">
+                        <label for="mar_single">Single</label>
+
+                        <input type="radio" id="mar_other" name="marriage" value="3">
+                        <label for="mar_other">Other</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-header">Payment History (Past 6 Months)</div>
+            <div class="info-box">
+                <p>Repayment status: 0 = pay duly, 1 = payment delay for one month, 2 = payment delay for two months, etc.</p>
+            </div>
+
+            <div class="payment-row">
+                <div class="payment-group">
+                    <label for="pay_0">September</label>
+                    <input type="number" id="pay_0" name="pay_0" min="0" max="8" value="0" required
+                           oninput="validateRange(this, 0, 8)">
+                    <small>Range: 0 to 8</small>
+                    <div class="error-message" id="pay_0_error"></div>
+                </div>
+
+                <div class="payment-group">
+                    <label for="pay_2">August</label>
+                    <input type="number" id="pay_2" name="pay_2" min="0" max="8" value="0" required
+                           oninput="validateRange(this, 0, 8)">
+                    <small>Range: 0 to 8</small>
+                    <div class="error-message" id="pay_2_error"></div>
+                </div>
+
+                <div class="payment-group">
+                    <label for="pay_3">July</label>
+                    <input type="number" id="pay_3" name="pay_3" min="0" max="8" value="0" required
+                           oninput="validateRange(this, 0, 8)">
+                    <small>Range: 0 to 8</small>
+                    <div class="error-message" id="pay_3_error"></div>
+                </div>
+
+                <div class="payment-group">
+                    <label for="pay_4">June</label>
+                    <input type="number" id="pay_4" name="pay_4" min="0" max="8" value="0" required
+                           oninput="validateRange(this, 0, 8)">
+                    <small>Range: 0 to 8</small>
+                    <div class="error-message" id="pay_4_error"></div>
+                </div>
+
+                <div class="payment-group">
+                    <label for="pay_5">May</label>
+                    <input type="number" id="pay_5" name="pay_5" min="0" max="8" value="0" required
+                           oninput="validateRange(this, 0, 8)">
+                    <small>Range: 0 to 8</small>
+                    <div class="error-message" id="pay_5_error"></div>
+                </div>
+
+                <div class="payment-group">
+                    <label for="pay_6">April</label>
+                    <input type="number" id="pay_6" name="pay_6" min="0" max="8" value="0" required
+                           oninput="validateRange(this, 0, 8)">
+                    <small>Range: 0 to 8</small>
+                    <div class="error-message" id="pay_6_error"></div>
+                </div>
+            </div>
+
+            <div class="section-header collapsible" id="bill-header">
+                Bill Amounts (Past 6 Months) ▼
+            </div>
+            <div class="collapsible-content" id="bill-content">
+                <div class="info-box">
+                    <p>Amount of bill statement in New Taiwan Dollar ($NT)</p>
+                </div>
+
+                <div class="payment-row">
+                    <div class="payment-group">
+                        <label for="bill_amt_sep">September</label>
+                        <input type="number" id="bill_amt_sep" name="bill_amt_sep" min="0" max="1000000" step="1000" value="30000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="bill_amt_sep_error"></div>
+                    </div>
+
+                    <div class="payment-group">
+                        <label for="bill_amt_aug">August</label>
+                        <input type="number" id="bill_amt_aug" name="bill_amt_aug" min="0" max="1000000" step="1000" value="30000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="bill_amt_aug_error"></div>
+                    </div>
+
+                    <div class="payment-group">
+                        <label for="bill_amt_jul">July</label>
+                        <input type="number" id="bill_amt_jul" name="bill_amt_jul" min="0" max="1000000" step="1000" value="30000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="bill_amt_jul_error"></div>
+                    </div>
+
+                    <div class="payment-group">
+                        <label for="bill_amt_jun">June</label>
+                        <input type="number" id="bill_amt_jun" name="bill_amt_jun" min="0" max="1000000" step="1000" value="30000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="bill_amt_jun_error"></div>
+                    </div>
+
+                    <div class="payment-group">
+                        <label for="bill_amt_may">May</label>
+                        <input type="number" id="bill_amt_may" name="bill_amt_may" min="0" max="1000000" step="1000" value="30000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="bill_amt_may_error"></div>
+                    </div>
+
+                    <div class="payment-group">
+                        <label for="bill_amt_apr">April</label>
+                        <input type="number" id="bill_amt_apr" name="bill_amt_apr" min="0" max="1000000" step="1000" value="30000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="bill_amt_apr_error"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-header collapsible" id="payment-header">
+                Payment Amounts (Past 6 Months) ▼
+            </div>
+            <div class="collapsible-content" id="payment-content">
+                <div class="info-box">
+                    <p>Amount of previous payment in New Taiwan Dollar ($NT)</p>
+                </div>
+
+                <div class="payment-row">
+                    <div class="payment-group">
+                        <label for="pay_amt_sep">September</label>
+                        <input type="number" id="pay_amt_sep" name="pay_amt_sep" min="0" max="1000000" step="1000" value="10000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="pay_amt_sep_error"></div>
+                    </div>
+
+                    <div class="payment-group">
+                        <label for="pay_amt_aug">August</label>
+                        <input type="number" id="pay_amt_aug" name="pay_amt_aug" min="0" max="1000000" step="1000" value="10000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="pay_amt_aug_error"></div>
+                    </div>
+
+                    <div class="payment-group">
+                        <label for="pay_amt_jul">July</label>
+                        <input type="number" id="pay_amt_jul" name="pay_amt_jul" min="0" max="1000000" step="1000" value="10000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="pay_amt_jul_error"></div>
+                    </div>
+
+                    <div class="payment-group">
+                        <label for="pay_amt_jun">June</label>
+                        <input type="number" id="pay_amt_jun" name="pay_amt_jun" min="0" max="1000000" step="1000" value="10000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="pay_amt_jun_error"></div>
+                    </div>
+
+                    <div class="payment-group">
+                        <label for="pay_amt_may">May</label>
+                        <input type="number" id="pay_amt_may" name="pay_amt_may" min="0" max="1000000" step="1000" value="10000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="pay_amt_may_error"></div>
+                    </div>
+
+                    <div class="payment-group">
+                        <label for="pay_amt_apr">April</label>
+                        <input type="number" id="pay_amt_apr" name="pay_amt_apr" min="0" max="1000000" step="1000" value="10000" required
+                               oninput="validateRange(this, 0, 1000000)">
+                        <small>Range: 0 - 1,000,000</small>
+                        <div class="error-message" id="pay_amt_apr_error"></div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="predict-btn" {% if not model_loaded %}disabled{% endif %}>
+                Predict Default Risk
+            </button>
+        </form>
+
+        <div id="result" class="hidden">
+            <div class="section-header">Prediction Result</div>
+
+            <div id="prediction-box" class="prediction-box">
+                <span id="risk-icon"></span>
+                <p id="risk-text"></p>
+            </div>
+
+            <div class="metrics-row">
+                <div class="metric-card">
+                    <h3>Probability of No Default</h3>
+                    <p id="prob-no-default">0.00%</p>
+                </div>
+
+                <div class="metric-card">
+                    <h3>Probability of Default</h3>
+                    <p id="prob-default">0.00%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Collapsible sections
+        document.querySelectorAll('.collapsible').forEach(header => {
+            header.addEventListener('click', function() {
+                this.classList.toggle('active');
+                const content = document.getElementById(this.id.replace('header', 'content'));
+
+                if (content.style.display === 'block') {
+                    content.style.display = 'none';
+                    this.innerHTML = this.innerHTML.replace('▲', '▼');
+                } else {
+                    content.style.display = 'block';
+                    this.innerHTML = this.innerHTML.replace('▼', '▲');
+                }
+            });
+        });
+
+        // Initially hide the collapsible content
+        document.getElementById('bill-content').style.display = 'none';
+        document.getElementById('payment-content').style.display = 'none';
+
+        // Range validation function
+        function validateRange(input, min, max) {
+            const errorElement = document.getElementById(input.id + '_error');
+            const value = parseFloat(input.value);
+
+            if (isNaN(value) || value < min || value > max) {
+                errorElement.textContent = `Value must be between ${min} and ${max}`;
+                input.style.borderColor = '#ff0000';
+                return false;
+            } else {
+                errorElement.textContent = '';
+                input.style.borderColor = '#ddd';
+                return true;
+            }
+        }
+
+        // Form validation before submission
+        function validateForm() {
+            let isValid = true;
+
+            // Validate all range inputs
+            const rangeInputs = [
+                {id: 'limit_bal', min: 0, max: 1000000},
+                {id: 'age', min: 18, max: 100},
+                {id: 'pay_0', min: 0, max: 8},
+                {id: 'pay_2', min: 0, max: 8},
+                {id: 'pay_3', min: 0, max: 8},
+                {id: 'pay_4', min: 0, max: 8},
+                {id: 'pay_5', min: 0, max: 8},
+                {id: 'pay_6', min: 0, max: 8},
+                {id: 'bill_amt_sep', min: 0, max: 1000000},
+                {id: 'bill_amt_aug', min: 0, max: 1000000},
+                {id: 'bill_amt_jul', min: 0, max: 1000000},
+                {id: 'bill_amt_jun', min: 0, max: 1000000},
+                {id: 'bill_amt_may', min: 0, max: 1000000},
+                {id: 'bill_amt_apr', min: 0, max: 1000000},
+                {id: 'pay_amt_sep', min: 0, max: 1000000},
+                {id: 'pay_amt_aug', min: 0, max: 1000000},
+                {id: 'pay_amt_jul', min: 0, max: 1000000},
+                {id: 'pay_amt_jun', min: 0, max: 1000000},
+                {id: 'pay_amt_may', min: 0, max: 1000000},
+                {id: 'pay_amt_apr', min: 0, max: 1000000}
+            ];
+
+            rangeInputs.forEach(input => {
+                const element = document.getElementById(input.id);
+                if (!validateRange(element, input.min, input.max)) {
+                    isValid = false;
+                    // Scroll to the first error
+                    if (isValid) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+
+            return isValid;
+        }
+
+        // Form submission
+        document.getElementById('prediction-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                alert('Please fix the validation errors before submitting.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('predict-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+
+            fetch('/predict', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.message);
+                } else {
+                    // Display results
+                    document.getElementById('result').classList.remove('hidden');
+                    document.getElementById('risk-icon').textContent = data.risk_icon;
+                    document.getElementById('risk-text').textContent = data.risk_text;
+
+                    document.getElementById('prob-no-default').textContent =
+                        (data.probability_no_default * 100).toFixed(2) + '%';
+                    document.getElementById('prob-default').textContent =
+                        (data.probability_default * 100).toFixed(2) + '%';
+
+                    const predictionBox = document.getElementById('prediction-box');
+                    predictionBox.className = 'prediction-box ' + data.risk_class;
+
+                    // Scroll to results
+                    predictionBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while making the prediction.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Predict Default Risk';
+            });
+        });
+    </script>
+</body>
+</html>
